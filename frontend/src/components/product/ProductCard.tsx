@@ -6,14 +6,15 @@ import { Button } from "../ui/button";
 
 interface ProductCardProps {
     produto: Produto;
+    onSelect?: () => void;
 }
 
-export function ProductCard({ produto }: ProductCardProps) {
+export function ProductCard({ produto, onSelect }: ProductCardProps) {
     const handleAdd = () => {
-        if (produto.tipo === "COMPOSTO") {
-            console.log("Abrir modal de montagem para:", produto.nome);
+        if (onSelect) {
+            onSelect();
         } else {
-            console.log("Adicionar direto ao carrinho:", produto.nome);
+
         }
     };
 

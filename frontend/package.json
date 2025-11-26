@@ -17,7 +17,8 @@
         "zustand": "^4.5.2",
         "clsx": "^2.1.0",
         "tailwind-merge": "^2.2.2",
-        "class-variance-authority": "^0.7.0"
+        "class-variance-authority": "^0.7.0",
+        "sonner": "^1.4.41"
     },
     "devDependencies": {
         "@types/react": "^18.2.66",
