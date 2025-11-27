@@ -5,6 +5,7 @@ import { Button } from "../ui/button";
 
 export function AdminLayout() {
     const logout = useAuthStore((state) => state.logout);
+    const user = useAuthStore((state) => state.user);
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -13,32 +14,33 @@ export function AdminLayout() {
     };
 
     return (
-        <div className="flex min-h-screen bg-muted/20">
+        <div className="flex h-screen bg-gray-100">
             {/* Sidebar */}
-            <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-slate-900 text-slate-50">
-                <div className="flex h-16 items-center border-b border-slate-800 px-6">
-                    <span className="text-lg font-bold">Admin Panel</span>
+            <aside className="w-64 bg-white shadow-md flex flex-col">
+                <div className="p-6 border-b">
+                    <h1 className="text-xl font-bold text-primary">Admin Panel</h1>
+                    <p className="text-sm text-gray-500">Olá, {user?.nome || 'Admin'}</p>
                 </div>
-                <nav className="space-y-1 p-4">
-                    <Link
-                        to="/admin"
-                        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-800"
-                    >
-                        <LayoutDashboard className="h-4 w-4" />
-                        Pedidos
+
+                <nav className="flex-1 p-4 space-y-2">
+                    <Link to="/admin">
+                        <Button variant="ghost" className="w-full justify-start gap-2">
+                            <LayoutDashboard className="h-4 w-4" />
+                            Pedidos
+                        </Button>
                     </Link>
-                    <Link
-                        to="/admin/cardapio"
-                        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-800"
-                    >
-                        <UtensilsCrossed className="h-4 w-4" />
-                        Cardápio
+                    <Link to="/admin/cardapio">
+                        <Button variant="ghost" className="w-full justify-start gap-2">
+                            <UtensilsCrossed className="h-4 w-4" />
+                            Cardápio
+                        </Button>
                     </Link>
                 </nav>
-                <div className="absolute bottom-4 left-0 w-full px-4">
-                    <Button
-                        variant="destructive"
-                        className="w-full justify-start gap-3"
+
+                <div className="p-4 border-t">
+                    <Button 
+                        variant="outline" 
+                        className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                         onClick={handleLogout}
                     >
                         <LogOut className="h-4 w-4" />
@@ -48,7 +50,7 @@ export function AdminLayout() {
             </aside>
 
             {/* Main Content */}
-            <main className="ml-64 flex-1 p-8">
+            <main className="flex-1 overflow-auto p-8">
                 <Outlet />
             </main>
         </div>

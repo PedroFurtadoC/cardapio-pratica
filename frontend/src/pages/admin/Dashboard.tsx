@@ -1,106 +1,133 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
-import { Bike, CheckCircle, Clock, Store } from "lucide-react";
+import { PedidoService } from "../../services/PedidoService";
+import { Pedido, StatusPedido } from "@/types";
+import { Loader2, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
-// Mock Orders
-const ORDERS = [
-    {
-        id: "#1001",
-        cliente: "João Silva",
-        modalidade: "DELIVERY",
-        status: "RECEBIDO",
-        total: 4500,
-        itens: ["1x Marmita Média", "1x Coca-Cola"],
-        tempo: "5 min",
-    },
-    {
-        id: "#1002",
-        cliente: "Maria Oliveira",
-        modalidade: "RETIRADA",
-        status: "EM_PREPARO",
-        total: 2200,
-        itens: ["1x Marmita Grande"],
-        tempo: "15 min",
-    },
-    {
-        id: "#1003",
-        cliente: "Carlos Souza",
-        modalidade: "DELIVERY",
-        status: "PRONTO",
-        total: 6800,
-        itens: ["2x Marmita Média", "2x Suco"],
-        tempo: "30 min",
-    },
-];
-
-const COLUMNS = [
+const COLUMNS: { id: StatusPedido; label: string; color: string }[] = [
     { id: "RECEBIDO", label: "Recebidos", color: "bg-blue-100 text-blue-700" },
     { id: "EM_PREPARO", label: "Em Preparo", color: "bg-yellow-100 text-yellow-700" },
-    { id: "PRONTO", label: "Pronto / Saiu", color: "bg-green-100 text-green-700" },
+    { id: "PRONTO", label: "Pronto", color: "bg-green-100 text-green-700" },
     { id: "ENTREGUE", label: "Entregue", color: "bg-gray-100 text-gray-700" },
 ];
 
 export function AdminDashboard() {
-    return (
-        <div>
-            <h1 className="mb-8 text-3xl font-bold">Pedidos em Tempo Real</h1>
+    const [orders, setOrders] = useState<Pedido[]>([]);
+    const [loading, setLoading] = useState(true);
 
-            {ORDERS.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-                    <div className="mb-4 rounded-full bg-muted p-4">
-                        <Store className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-lg font-semibold">Nenhum pedido recebido</h3>
-                    <p className="text-muted-foreground">Aguardando novos pedidos...</p>
+    const fetchOrders = async () => {
+        setLoading(true);
+        try {
+            const data = await PedidoService.getAll();
+            // Ordenar por data (mais recentes primeiro) se necessário
+            setOrders(data.reverse()); 
+        } catch (error) {
+            console.error(error);
+            toast.error("Erro ao carregar pedidos.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchOrders();
+        // Polling simples a cada 30 segundos
+        const interval = setInterval(fetchOrders, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleUpdateStatus = async (id: string, currentStatus: StatusPedido) => {
+        let nextStatus: StatusPedido | null = null;
+        if (currentStatus === "RECEBIDO") nextStatus = "EM_PREPARO";
+        else if (currentStatus === "EM_PREPARO") nextStatus = "PRONTO";
+        else if (currentStatus === "PRONTO") nextStatus = "ENTREGUE";
+
+        if (nextStatus) {
+            try {
+                // Atualização otimista da UI
+                setOrders(orders.map(o => o._id === id ? { ...o, status: nextStatus! } : o));
+                
+                await PedidoService.updateStatus(id, nextStatus);
+                toast.success(`Pedido #${id.slice(-4)} movido para ${nextStatus}`);
+            } catch (error) {
+                console.error(error);
+                toast.error("Erro ao atualizar status.");
+                fetchOrders(); // Reverte em caso de erro
+            }
+        }
+    };
+
+    return (
+        <div className="h-full flex flex-col">
+            <div className="mb-6 flex items-center justify-between">
+                <h1 className="text-2xl font-bold">Pedidos em Tempo Real</h1>
+                <Button variant="outline" size="sm" onClick={fetchOrders} disabled={loading}>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                    Atualizar
+                </Button>
+            </div>
+
+            {loading && orders.length === 0 ? (
+                <div className="flex flex-1 items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : orders.length === 0 ? (
+                <div className="flex flex-1 flex-col items-center justify-center text-gray-400">
+                    <p>Nenhum pedido encontrado.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full overflow-x-auto pb-4">
                     {COLUMNS.map((col) => (
-                        <div key={col.id} className="flex flex-col rounded-lg bg-muted/50 p-4">
-                            <div className={`mb-4 flex items-center justify-between rounded-md px-3 py-2 font-semibold ${col.color}`}>
-                                <span>{col.label}</span>
-                                <span className="rounded-full bg-white/50 px-2 py-0.5 text-xs">
-                                    {ORDERS.filter((o) => o.status === col.id).length}
-                                </span>
+                        <div key={col.id} className="flex flex-col rounded-lg bg-gray-50 p-4 h-full min-w-[280px]">
+                            <div className={`mb-4 flex items-center justify-between rounded px-3 py-2 font-bold ${col.color}`}>
+                                {col.label}
+                                <Badge variant="secondary" className="bg-white/50 text-inherit border-0">
+                                    {orders.filter((o) => o.status === col.id).length}
+                                </Badge>
                             </div>
 
-                            <div className="flex flex-col gap-4">
-                                {ORDERS.filter((o) => o.status === col.id).map((order) => (
-                                    <div key={order.id} className="flex flex-col rounded-lg border bg-card p-4 shadow-sm">
-                                        <div className="mb-2 flex items-center justify-between">
-                                            <span className="font-bold">{order.id}</span>
-                                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                <Clock className="h-3 w-3" /> {order.tempo}
+                            <div className="flex-1 space-y-3 overflow-y-auto pr-2">
+                                {orders.filter((o) => o.status === col.id).map((order) => (
+                                    <div key={order._id} className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="font-mono text-xs text-gray-400">#{order.codigo_pedido}</span>
+                                            <span className="text-xs text-gray-400">
+                                                {new Date(order.data_criacao).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
 
-                                        <div className="mb-3">
-                                            <p className="font-medium">{order.cliente}</p>
-                                            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                                                {order.modalidade === "DELIVERY" ? (
-                                                    <Badge variant="secondary" className="gap-1 px-1.5 py-0">
-                                                        <Bike className="h-3 w-3" /> Delivery
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge variant="outline" className="gap-1 px-1.5 py-0">
-                                                        <Store className="h-3 w-3" /> Retirada
-                                                    </Badge>
-                                                )}
+                                        <div className="mb-2">
+                                            <p className="font-bold text-gray-800">{order.cliente.nome}</p>
+                                            <div className="flex gap-2 text-xs mt-1">
+                                                <Badge variant="outline" className={order.modalidade === "DELIVERY" ? "text-blue-600 bg-blue-50" : "text-orange-600 bg-orange-50"}>
+                                                    {order.modalidade}
+                                                </Badge>
                                             </div>
                                         </div>
 
-                                        <div className="mb-4 space-y-1 border-t pt-2 text-sm text-muted-foreground">
+                                        <div className="text-sm text-gray-600 mb-3 border-t border-b py-2 space-y-1">
                                             {order.itens.map((item, idx) => (
-                                                <p key={idx}>{item}</p>
+                                                <div key={idx} className="flex justify-between">
+                                                    <span>{item.quantidade}x {item.nome_produto}</span>
+                                                </div>
                                             ))}
                                         </div>
 
-                                        <div className="mt-auto flex items-center justify-between border-t pt-3">
-                                            <span className="font-bold text-primary">{formatPrice(order.total)}</span>
-                                            <Button size="sm" variant="ghost">
-                                                Mover <CheckCircle className="ml-1 h-3 w-3" />
-                                            </Button>
+                                        <div className="flex items-center justify-between mt-2">
+                                            <span className="font-bold text-primary">{formatPrice(order.valor_total_centavos)}</span>
+                                            
+                                            {order.status !== "ENTREGUE" && (
+                                                <Button 
+                                                    size="sm" 
+                                                    variant="outline"
+                                                    onClick={() => handleUpdateStatus(order._id, order.status)}
+                                                >
+                                                    Mover &rarr;
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

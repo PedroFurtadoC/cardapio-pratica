@@ -1,15 +1,27 @@
 import { Button } from "@/components/ui/button";
-import { COMPONENTES_MOCK } from "@/data/mockData";
+import { Input } from "@/components/ui/input";
 import { formatPrice } from "@/lib/utils";
+import { ComponenteService } from "../services/ComponenteService";
+import { PedidoService } from "../services/PedidoService";
 import { useCartStore } from "@/store/cartStore";
-import { ArrowLeft, Bike, Send, Store, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Componente, PedidoCreate } from "@/types";
+import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 export function Checkout() {
-    const { items, removeItem, updateQuantity, totalCartPrice } = useCartStore();
+    const { items, removeItem, updateQuantity, totalCartPrice, clearCart } = useCartStore();
     const navigate = useNavigate();
+    
+    // Estado local para mapeamento de componentes (para gerar a string de seleções)
+    const [allComponents, setAllComponents] = useState<Componente[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        // Carregamos os componentes para poder traduzir ID -> Nome na hora de criar o pedido
+        ComponenteService.getAll().then(setAllComponents).catch(console.error);
+    }, []);
 
     const [modalidade, setModalidade] = useState<"DELIVERY" | "RETIRADA">("DELIVERY");
     const [nome, setNome] = useState("");
@@ -23,10 +35,11 @@ export function Checkout() {
     });
 
     const subtotal = totalCartPrice();
-    const taxaEntrega = modalidade === "DELIVERY" ? 500 : 0;
+    const taxaEntrega = modalidade === "DELIVERY" ? 1000 : 0; // Exemplo: R$ 10,00 fixo
     const total = subtotal + taxaEntrega;
 
-    const handleWhatsApp = () => {
+    const handleFinishOrder = async () => {
+        // 1. Validação
         if (!nome || !telefone) {
             toast.error("Por favor, preencha seu nome e telefone.");
             return;
@@ -36,213 +49,270 @@ export function Checkout() {
             return;
         }
 
-        let message = `*NOVO PEDIDO - Coração de Mãe*\n\n`;
-        message += `*Cliente:* ${nome}\n`;
-        message += `*Telefone:* ${telefone}\n`;
-        message += `*Modalidade:* ${modalidade === "DELIVERY" ? "🛵 Entrega" : "🏪 Retirada"}\n\n`;
+        setIsSubmitting(true);
 
-        message += `*ITENS DO PEDIDO:*\n`;
-        items.forEach((item) => {
-            message += `- ${item.quantidade}x ${item.produto.nome} (${formatPrice(item.totalPrice)})\n`;
-            if (item.selections) {
-                const componentes = Object.entries(item.selections)
-                    .map(([id, qty]) => {
-                        const comp = COMPONENTES_MOCK.find((c) => c._id === id);
-                        return comp ? `${qty}x ${comp.nome}` : "";
-                    })
-                    .filter(Boolean)
-                    .join(", ");
-                message += `  _(${componentes})_\n`;
-            }
-        });
+        try {
+            // 2. Construir Payload para API
+            const pedidoPayload: PedidoCreate = {
+                cliente: {
+                    nome,
+                    telefone,
+                },
+                modalidade,
+                forma_pagamento: "PIX", // Simplificado para este exemplo
+                entrega: modalidade === "DELIVERY" ? {
+                    logradouro: endereco.rua,
+                    numero: endereco.numero,
+                    bairro: endereco.bairro
+                } : undefined,
+                itens: items.map(cartItem => {
+                    // Converter selections {id: qty} para lista de nomes ["Arroz", "Feijão"]
+                    let selecoesNomes: string[] = [];
+                    if (cartItem.selections) {
+                        Object.entries(cartItem.selections).forEach(([compId, qty]) => {
+                            const comp = allComponents.find(c => c._id === compId);
+                            if (comp) {
+                                // Adiciona o nome N vezes conforme a quantidade
+                                for (let i = 0; i < qty; i++) {
+                                    selecoesNomes.push(comp.nome);
+                                }
+                            }
+                        });
+                    }
 
-        message += `\n*RESUMO FINANCEIRO:*\n`;
-        message += `Subtotal: ${formatPrice(subtotal)}\n`;
-        message += `Taxa de Entrega: ${formatPrice(taxaEntrega)}\n`;
-        message += `*TOTAL: ${formatPrice(total)}*\n\n`;
+                    return {
+                        nome_produto: cartItem.produto.nome,
+                        quantidade: cartItem.quantidade,
+                        preco_unitario: cartItem.totalPrice,
+                        selecoes: selecoesNomes
+                    };
+                })
+            };
 
-        if (modalidade === "DELIVERY") {
-            message += `*ENDEREÇO DE ENTREGA:*\n`;
-            message += `${endereco.rua}, ${endereco.numero} - ${endereco.bairro}\n`;
-            if (endereco.complemento) message += `Complemento: ${endereco.complemento}\n`;
+            // 3. Enviar para Backend
+            const novoPedido = await PedidoService.create(pedidoPayload);
+
+            // 4. Montar mensagem WhatsApp (Opcional, mas útil para o fluxo)
+            let message = `*NOVO PEDIDO #${novoPedido.codigo_pedido}*\n`;
+            message += `*Cliente:* ${nome}\n`;
+            message += `--------------------------------\n`;
+            
+            // Reutiliza a info local para a mensagem do zap ser rápida
+            items.forEach((item) => {
+                message += `${item.quantidade}x ${item.produto.nome}\n`;
+                if (item.selections) {
+                    const comps = Object.entries(item.selections)
+                        .map(([id, qty]) => {
+                            const c = allComponents.find(comp => comp._id === id);
+                            return c ? `${qty}x ${c.nome}` : "";
+                        })
+                        .filter(Boolean)
+                        .join(", ");
+                    if (comps) message += `   _(${comps})_\n`;
+                }
+            });
+            message += `\n*Total:* ${formatPrice(total)}\n`;
+            
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/5516999999999?text=${encodedMessage}`;
+
+            // 5. Limpar e Redirecionar
+            clearCart();
+            toast.success("Pedido realizado com sucesso!");
+            
+            // Pequeno delay para usuário ver o toast antes de abrir o WhatsApp
+            setTimeout(() => {
+                window.open(whatsappUrl, "_blank");
+                navigate("/");
+            }, 1500);
+
+        } catch (error) {
+            console.error(error);
+            toast.error("Erro ao processar o pedido. Tente novamente.");
+        } finally {
+            setIsSubmitting(false);
         }
-
-        const encodedMessage = encodeURIComponent(message);
-        window.open(`https://wa.me/5516999999999?text=${encodedMessage}`, "_blank");
     };
 
     if (items.length === 0) {
         return (
-            <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center">
-                <h2 className="mb-4 text-2xl font-bold">Seu carrinho está vazio</h2>
-                <p className="mb-8 text-muted-foreground">Adicione algumas delícias para continuar.</p>
+            <div className="flex h-[80vh] flex-col items-center justify-center p-4 text-center">
+                <h2 className="text-xl font-semibold">Seu carrinho está vazio</h2>
+                <p className="mb-6 text-gray-500">Adicione algumas delícias para continuar.</p>
                 <Button onClick={() => navigate("/")}>Voltar ao Cardápio</Button>
             </div>
         );
     }
 
     return (
-        <div className="container mx-auto max-w-2xl px-4 py-8 pb-24">
-            <Button variant="ghost" onClick={() => navigate("/")} className="mb-6 pl-0">
+        <div className="container mx-auto max-w-2xl px-4 py-6 pb-20">
+            <Button variant="ghost" onClick={() => navigate("/")} className="mb-6 pl-0 hover:bg-transparent">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Continuar Comprando
             </Button>
 
-            <h1 className="mb-8 text-3xl font-bold">Finalizar Pedido</h1>
+            <h1 className="mb-6 text-2xl font-bold">Finalizar Pedido</h1>
 
             {/* Lista de Itens */}
-            <section className="mb-8 space-y-4">
-                <h2 className="text-xl font-semibold">Seus Itens</h2>
+            <div className="mb-8 space-y-4">
+                <h2 className="font-semibold text-gray-700">Seus Itens</h2>
+
                 {items.map((item) => (
-                    <div key={item.id} className="flex items-start justify-between rounded-lg border p-4">
+                    <div key={item.id} className="flex gap-4 rounded-lg border p-4 bg-white shadow-sm">
                         <div className="flex-1">
-                            <h3 className="font-medium">{item.produto.nome}</h3>
+                            <h3 className="font-bold">{item.produto.nome}</h3>
+                            
                             {item.selections && (
-                                <p className="mt-1 text-sm text-muted-foreground">
+                                <p className="mt-1 text-sm text-gray-500">
                                     {Object.entries(item.selections)
                                         .map(([id, qty]) => {
-                                            const comp = COMPONENTES_MOCK.find((c) => c._id === id);
+                                            const comp = allComponents.find((c) => c._id === id);
                                             return comp ? `${qty}x ${comp.nome}` : "";
                                         })
+                                        .filter(Boolean)
                                         .join(", ")}
                                 </p>
                             )}
-                            <div className="mt-2 text-sm font-semibold text-primary">
-                                {formatPrice(item.totalPrice)}
+                            <div className="mt-2 font-medium text-primary">
+                                {formatPrice(item.totalPrice * item.quantidade)}
                             </div>
                         </div>
 
-                        <div className="flex flex-col items-end gap-2">
-                            <div className="flex items-center gap-2 rounded-md border bg-background">
-                                <button
-                                    className="px-2 py-1 hover:bg-accent"
+                        <div className="flex flex-col items-end justify-between">
+                            <div className="flex items-center gap-3 rounded-md border bg-gray-50 p-1">
+                                <button 
+                                    className="h-6 w-6 rounded hover:bg-gray-200"
                                     onClick={() => updateQuantity(item.id, -1)}
-                                >
-                                    -
-                                </button>
-                                <span className="w-4 text-center text-sm">{item.quantidade}</span>
-                                <button
-                                    className="px-2 py-1 hover:bg-accent"
+                                >-</button>
+                                <span className="text-sm font-medium w-4 text-center">{item.quantidade}</span>
+                                <button 
+                                    className="h-6 w-6 rounded hover:bg-gray-200"
                                     onClick={() => updateQuantity(item.id, 1)}
-                                >
-                                    +
-                                </button>
+                                >+</button>
                             </div>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive/90"
+
+                            <button 
+                                className="text-red-500 hover:text-red-700"
                                 onClick={() => removeItem(item.id)}
                             >
                                 <Trash2 className="h-4 w-4" />
-                            </Button>
+                            </button>
                         </div>
                     </div>
                 ))}
-            </section>
+            </div>
 
             {/* Modalidade */}
-            <section className="mb-8">
-                <h2 className="mb-4 text-xl font-semibold">Como deseja receber?</h2>
+            <div className="mb-8">
+                <h2 className="mb-3 font-semibold text-gray-700">Como deseja receber?</h2>
                 <div className="grid grid-cols-2 gap-4">
-                    <div
-                        className={`cursor-pointer rounded-xl border-2 p-4 text-center transition-all ${modalidade === "DELIVERY"
-                            ? "border-primary bg-primary/5"
-                            : "border-transparent bg-secondary/10 hover:bg-secondary/20"
-                            }`}
+                    <div 
+                        className={`cursor-pointer rounded-lg border-2 p-4 text-center transition-all ${
+                            modalidade === "DELIVERY" ? "border-primary bg-primary/5" : "border-gray-200"
+                        }`}
                         onClick={() => setModalidade("DELIVERY")}
                     >
-                        <Bike className={`mx-auto mb-2 h-8 w-8 ${modalidade === "DELIVERY" ? "text-primary" : "text-muted-foreground"}`} />
-                        <span className="font-semibold">Entrega</span>
-                        <p className="text-xs text-muted-foreground">+ R$ 5,00</p>
+                        <h3 className="font-bold">Entrega</h3>
+                        <p className="text-sm text-gray-500">+ {formatPrice(taxaEntrega)}</p>
                     </div>
-                    <div
-                        className={`cursor-pointer rounded-xl border-2 p-4 text-center transition-all ${modalidade === "RETIRADA"
-                            ? "border-primary bg-primary/5"
-                            : "border-transparent bg-secondary/10 hover:bg-secondary/20"
-                            }`}
+
+                    <div 
+                        className={`cursor-pointer rounded-lg border-2 p-4 text-center transition-all ${
+                            modalidade === "RETIRADA" ? "border-primary bg-primary/5" : "border-gray-200"
+                        }`}
                         onClick={() => setModalidade("RETIRADA")}
                     >
-                        <Store className={`mx-auto mb-2 h-8 w-8 ${modalidade === "RETIRADA" ? "text-primary" : "text-muted-foreground"}`} />
-                        <span className="font-semibold">Retirada</span>
-                        <p className="text-xs text-muted-foreground">Grátis</p>
+                        <h3 className="font-bold">Retirada</h3>
+                        <p className="text-sm text-green-600">Grátis</p>
                     </div>
                 </div>
-            </section>
+            </div>
 
             {/* Dados do Cliente */}
-            <section className="mb-8 space-y-4">
-                <h2 className="text-xl font-semibold">Seus Dados</h2>
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <input
-                        type="text"
-                        placeholder="Seu Nome"
-                        className="w-full rounded-md border p-2"
+            <div className="mb-8 space-y-4">
+                <h2 className="font-semibold text-gray-700">Seus Dados</h2>
+                <div className="grid gap-4">
+                    <Input 
+                        placeholder="Seu Nome Completo" 
                         value={nome}
                         onChange={(e) => setNome(e.target.value)}
                     />
-                    <input
-                        type="tel"
-                        placeholder="Seu WhatsApp (com DDD)"
-                        className="w-full rounded-md border p-2"
+                    <Input 
+                        placeholder="Telefone / WhatsApp" 
                         value={telefone}
                         onChange={(e) => setTelefone(e.target.value)}
                     />
                 </div>
-            </section>
+            </div>
 
             {/* Endereço (Condicional) */}
             {modalidade === "DELIVERY" && (
-                <section className="mb-8 space-y-4 animate-in slide-in-from-top-4 duration-300">
-                    <h2 className="text-xl font-semibold">Endereço de Entrega</h2>
-                    <div className="grid gap-4">
-                        <div className="grid grid-cols-3 gap-4">
-                            <input
-                                type="text"
-                                placeholder="CEP"
-                                className="col-span-1 w-full rounded-md border p-2"
+                <div className="mb-8 space-y-4 animate-in fade-in slide-in-from-top-2">
+                    <h2 className="font-semibold text-gray-700">Endereço de Entrega</h2>
+                    <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                            <Input 
+                                placeholder="CEP" 
                                 value={endereco.cep}
                                 onChange={(e) => setEndereco({ ...endereco, cep: e.target.value })}
                             />
-                            <input
-                                type="text"
-                                placeholder="Bairro"
-                                className="col-span-2 w-full rounded-md border p-2"
+                            <Input 
+                                placeholder="Bairro" 
                                 value={endereco.bairro}
                                 onChange={(e) => setEndereco({ ...endereco, bairro: e.target.value })}
                             />
                         </div>
-                        <div className="grid grid-cols-4 gap-4">
-                            <input
-                                type="text"
-                                placeholder="Rua / Avenida"
-                                className="col-span-3 w-full rounded-md border p-2"
+                        <div className="grid grid-cols-[1fr_80px] gap-3">
+                            <Input 
+                                placeholder="Rua / Avenida" 
                                 value={endereco.rua}
                                 onChange={(e) => setEndereco({ ...endereco, rua: e.target.value })}
                             />
-                            <input
-                                type="text"
-                                placeholder="Nº"
-                                className="col-span-1 w-full rounded-md border p-2"
+                            <Input 
+                                placeholder="Nº" 
                                 value={endereco.numero}
                                 onChange={(e) => setEndereco({ ...endereco, numero: e.target.value })}
                             />
                         </div>
-                        <input
-                            type="text"
-                            placeholder="Complemento (Opcional)"
-                            className="w-full rounded-md border p-2"
+                        <Input 
+                            placeholder="Complemento (Apto, Bloco, etc)" 
                             value={endereco.complemento}
                             onChange={(e) => setEndereco({ ...endereco, complemento: e.target.value })}
                         />
                     </div>
-                </section>
+                </div>
             )}
 
-            <Button className="w-full py-6 text-lg" onClick={handleWhatsApp}>
-                <Send className="mr-2 h-5 w-5" />
-                Enviar Pedido no WhatsApp
-            </Button>
+            {/* Total e Ação */}
+            <div className="rounded-lg bg-gray-50 p-6">
+                <div className="mb-2 flex justify-between text-sm">
+                    <span>Subtotal</span>
+                    <span>{formatPrice(subtotal)}</span>
+                </div>
+                <div className="mb-4 flex justify-between text-sm">
+                    <span>Taxa de Entrega</span>
+                    <span>{formatPrice(taxaEntrega)}</span>
+                </div>
+                <div className="mb-6 flex justify-between border-t pt-4 text-xl font-bold text-primary">
+                    <span>Total</span>
+                    <span>{formatPrice(total)}</span>
+                </div>
+
+                <Button 
+                    className="w-full py-6 text-lg" 
+                    onClick={handleFinishOrder}
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? (
+                        <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Enviando...
+                        </>
+                    ) : (
+                        "Finalizar Pedido"
+                    )}
+                </Button>
+            </div>
         </div>
     );
 }

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/store/authStore";
-import { Lock } from "lucide-react";
+import { Lock, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -8,54 +9,66 @@ import { toast } from "sonner";
 export function AdminLogin() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const login = useAuthStore((state) => state.login);
+    
+    // Pegando estados e funções da store atualizada
+    const { login, isLoading } = useAuthStore();
     const navigate = useNavigate();
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (email === "admin@coracaodemae.com" && password === "123") {
-            login(email);
+        try {
+            await login(email, password);
+            toast.success("Login realizado com sucesso!");
             navigate("/admin");
-            toast.success("Bem-vindo de volta!");
-        } else {
-            toast.error("Credenciais inválidas!");
+        } catch (error) {
+            // O tratamento de erro já é feito na store (setando error state), 
+            // mas o toast aqui garante feedback visual imediato
+            toast.error("Credenciais inválidas ou erro no servidor.");
         }
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-muted/20">
-            <div className="w-full max-w-md rounded-lg border bg-background p-8 shadow-lg">
+        <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
+            <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-lg">
                 <div className="mb-8 text-center">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                        <Lock className="h-6 w-6 text-primary" />
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <Lock className="h-8 w-8" />
                     </div>
-                    <h1 className="text-2xl font-bold">Área Restrita</h1>
-                    <p className="text-sm text-muted-foreground">Acesso exclusivo para administração</p>
+                    <h1 className="text-2xl font-bold text-gray-900">Área Restrita</h1>
+                    <p className="text-sm text-gray-500">Acesso exclusivo para administração</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-4">
-                    <div>
-                        <label className="mb-2 block text-sm font-medium">Email</label>
-                        <input
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Email</label>
+                        <Input 
                             type="email"
-                            className="w-full rounded-md border p-2"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="admin@coracaodemae.com"
+                            placeholder="admin@restaurante.com"
+                            required
                         />
                     </div>
-                    <div>
-                        <label className="mb-2 block text-sm font-medium">Senha</label>
-                        <input
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Senha</label>
+                        <Input 
                             type="password"
-                            className="w-full rounded-md border p-2"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            placeholder="123"
+                            placeholder="••••••"
+                            required
                         />
                     </div>
-                    <Button type="submit" className="w-full">
-                        Entrar
+
+                    <Button className="w-full" type="submit" disabled={isLoading}>
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Entrando...
+                            </>
+                        ) : (
+                            "Entrar"
+                        )}
                     </Button>
                 </form>
             </div>

@@ -1,11 +1,12 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
-import { useMarmitaLogic } from "@/hooks/useMarmitaLogic";
-import { formatPrice } from "@/lib/utils";
-import { Componente, Produto } from "@/types";
+import { Badge } from '../ui/badge';
+import { Button } from "../ui/button";
+import { Dialog } from "../ui/dialog";
+import { useMarmitaLogic } from "../../hooks/useMarmitaLogic";
+import { formatPrice } from "../../lib/utils";
+import { Componente, Produto } from "../../types";
 import { Check, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { useState } from "react";
+import { ScrollArea } from "../ui/ScrollArea";
 
 interface ModalMontagemMarmitaProps {
     isOpen: boolean;
@@ -13,7 +14,6 @@ interface ModalMontagemMarmitaProps {
     produto: Produto;
     componentes: Componente[];
     onAddToCart: (item: { produto: Produto; selections?: { [key: string]: number }; totalPrice: number }) => void;
-
 }
 
 export function ModalMontagemMarmita({
@@ -46,6 +46,7 @@ export function ModalMontagemMarmita({
                 selections,
                 totalPrice,
             });
+            setStep(1); 
             onClose();
         }
     };
@@ -55,8 +56,8 @@ export function ModalMontagemMarmita({
             case 1:
                 return (
                     <StepSection
-                        title="Escolha sua Base"
-                        subtitle={`Selecione até ${limits.max_base} opção(ões)`}
+                        title="Escolha a Base"
+                        subtitle={`Selecione até ${limits.max_base} opções`}
                         items={groups.bases}
                         selections={selections}
                         onToggle={toggleSelection}
@@ -67,8 +68,8 @@ export function ModalMontagemMarmita({
             case 2:
                 return (
                     <StepSection
-                        title="Escolha sua Proteína"
-                        subtitle={`Selecione até ${limits.max_proteina} opção(ões)`}
+                        title="Proteína"
+                        subtitle={`Escolha ${limits.max_proteina} opções deliciosas`}
                         items={groups.proteinas}
                         selections={selections}
                         onToggle={toggleSelection}
@@ -79,8 +80,8 @@ export function ModalMontagemMarmita({
             case 3:
                 return (
                     <StepSection
-                        title="Guarnições Quentes"
-                        subtitle={`Selecione até ${limits.max_guarnicao} opção(ões)`}
+                        title="Guarnições"
+                        subtitle={`Complete com até ${limits.max_guarnicao} acompanhamentos`}
                         items={groups.guarnicoesQuentes}
                         selections={selections}
                         onToggle={toggleSelection}
@@ -91,23 +92,24 @@ export function ModalMontagemMarmita({
             case 4:
                 return (
                     <div className="space-y-4">
-                        <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-green-800">
-                            <div className="flex items-center gap-2 font-semibold">
-                                <Info className="h-5 w-5" />
-                                Embalagem Separada
+                        <div className="bg-blue-50 p-4 rounded-lg flex gap-3 items-start text-blue-800">
+                            <Info className="h-5 w-5 mt-0.5 shrink-0" />
+                            <div>
+                                <h4 className="font-semibold text-sm">Embalagem Separada</h4>
+                                <p className="text-xs mt-1 opacity-90">
+                                    Estes itens vão em potes separados e não ocupam espaço na sua marmita. Aproveite para complementar seu pedido!
+                                </p>
                             </div>
-                            <p className="mt-1 text-sm">
-                                Estes itens vão em potes separados e <strong>não ocupam espaço</strong> na sua marmita. Aproveite para complementar seu pedido!
-                            </p>
                         </div>
+
                         <StepSection
                             title="Saladas e Extras"
-                            subtitle="Selecione quantos quiser"
+                            subtitle="Adicionais à parte (Opcional)"
                             items={groups.saladasExtras}
                             selections={selections}
                             onToggle={toggleSelection}
-                            max={99} // Livre
-                            current={0} // Não usa contador global
+                            max={99} // Sem limite estrito de UI para extras
+                            current={0}
                             isExtra={true}
                         />
                     </div>
@@ -118,57 +120,56 @@ export function ModalMontagemMarmita({
     };
 
     return (
-        <Dialog
-            open={isOpen}
+        <Dialog 
+            open={isOpen} 
             onOpenChange={(open) => !open && onClose()}
             title={`Montar ${produto.nome}`}
             description={produto.descricao}
         >
-            <div className="flex flex-col h-[60vh]">
-                {/* Progress Bar */}
-                <div className="mb-4 flex gap-2">
+            <div className="flex flex-col h-[65vh]"> {/* Altura fixa para permitir scroll interno */}
+                
+                {/* Progress Bar (Inserida manualmente pois o Dialog simples não tem slot de Header customizado) */}
+                <div className="flex gap-2 mb-4 shrink-0">
                     {[1, 2, 3, 4].map((s) => (
-                        <div
+                        <div 
                             key={s}
-                            className={`h-2 flex-1 rounded-full transition-colors ${s <= step ? "bg-primary" : "bg-muted"
-                                }`}
+                            className={`h-1.5 flex-1 rounded-full transition-colors ${
+                                s <= step ? 'bg-primary' : 'bg-gray-100'
+                            }`} 
                         />
                     ))}
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto pr-2">
+                <ScrollArea className="flex-1 pr-2">
                     {renderStepContent()}
-                </div>
+                </ScrollArea>
 
                 {/* Footer */}
-                <div className="mt-4 border-t pt-4">
-                    <div className="mb-4 flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Total do Item:</span>
-                        <span className="text-xl font-bold text-primary">
+                <div className="mt-4 pt-4 border-t flex items-center justify-between shrink-0">
+                    <div className="flex flex-col">
+                        <span className="text-sm text-gray-500">Total do Item:</span>
+                        <span className="font-bold text-xl text-primary">
                             {formatPrice(totalPrice)}
                         </span>
                     </div>
+
                     <div className="flex gap-2">
                         {step > 1 && (
-                            <Button variant="outline" onClick={handleBack} className="flex-1">
+                            <Button variant="outline" onClick={handleBack}>
                                 <ChevronLeft className="mr-2 h-4 w-4" />
                                 Voltar
                             </Button>
                         )}
                         {step < totalSteps ? (
-                            <Button onClick={handleNext} className="flex-1">
+                            <Button onClick={handleNext} disabled={!isValid && step === totalSteps}>
                                 Próximo
                                 <ChevronRight className="ml-2 h-4 w-4" />
                             </Button>
                         ) : (
-                            <Button
-                                onClick={handleFinish}
-                                className="flex-1"
-                                disabled={!isValid}
-                            >
+                            <Button onClick={handleFinish} disabled={!isValid}>
+                                <Check className="mr-2 h-4 w-4" />
                                 Adicionar ao Pedido
-                                <Check className="ml-2 h-4 w-4" />
                             </Button>
                         )}
                     </div>
@@ -192,19 +193,20 @@ interface StepSectionProps {
 function StepSection({ title, subtitle, items, selections, onToggle, max, current, isExtra }: StepSectionProps) {
     return (
         <div className="space-y-4">
-            <div>
-                <h3 className="text-lg font-medium">{title}</h3>
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    {subtitle}
+            <div className="flex items-baseline justify-between">
+                <h3 className="font-semibold text-lg">{title}</h3>
+
+                <div className="text-sm text-gray-500">
+                    <span className="mr-2">{subtitle}</span>
                     {!isExtra && (
-                        <Badge variant={current === max ? "default" : "secondary"} className="ml-auto">
+                        <Badge variant={current >= max ? "default" : "outline"}>
                             {current}/{max}
                         </Badge>
                     )}
-                </p>
+                </div>
             </div>
 
-            <div className="grid gap-3">
+            <div className="grid grid-cols-1 gap-3">
                 {items.map((item) => {
                     const isSelected = (selections[item._id] || 0) > 0;
                     const isDisabled = !isSelected && !isExtra && current >= max;
@@ -212,20 +214,27 @@ function StepSection({ title, subtitle, items, selections, onToggle, max, curren
                     return (
                         <div
                             key={item._id}
-                            className={`relative flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-all hover:bg-accent ${isSelected ? "border-primary bg-primary/5 ring-1 ring-primary" : "bg-card"
-                                } ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                            className={`
+                                relative p-4 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md
+                                ${isSelected 
+                                    ? 'border-primary bg-primary/5' 
+                                    : 'border-gray-100 hover:border-primary/50 bg-white'}
+                                ${isDisabled ? 'opacity-50 cursor-not-allowed grayscale' : ''}
+                            `}
                             onClick={() => !isDisabled && onToggle(item)}
                         >
-                            <div className="flex flex-col">
-                                <span className="font-medium">{item.nome}</span>
+                            <div className="flex justify-between items-start">
+                                <span className="font-medium text-sm pr-6">{item.nome}</span>
                                 {item.preco_adicional_centavos > 0 && (
-                                    <span className="text-xs text-muted-foreground">
+                                    <Badge variant="secondary" className="text-xs">
                                         + {formatPrice(item.preco_adicional_centavos)}
-                                    </span>
+                                    </Badge>
                                 )}
                             </div>
+
+
                             {isSelected && (
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                <div className="absolute top-3 right-3 text-primary">
                                     <Check className="h-4 w-4" />
                                 </div>
                             )}
@@ -234,10 +243,11 @@ function StepSection({ title, subtitle, items, selections, onToggle, max, curren
                 })}
             </div>
 
+
             {items.length === 0 && (
-                <div className="py-8 text-center text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
-                    <Info className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                    <p>Nenhuma opção disponível nesta categoria.</p>
+                <div className="text-center py-8 text-gray-400 border-2 border-dashed rounded-lg">
+                    <Info className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    Nenhuma opção disponível nesta categoria.
                 </div>
             )}
         </div>
