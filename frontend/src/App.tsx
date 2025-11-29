@@ -3,6 +3,7 @@ import { CartFAB } from "@/components/layout/CartFAB";
 import { Header } from "@/components/layout/Header";
 import { Checkout } from "@/pages/Checkout";
 import { Home } from "@/pages/Home";
+import { About } from "@/pages/About";
 import { AdminDashboard } from "@/pages/admin/Dashboard";
 import { AdminLogin } from "@/pages/admin/Login";
 import { AdminMenu } from "@/pages/admin/Menu";
@@ -33,7 +34,7 @@ function App() {
                 }>
                     <Route path="/" element={<Home />} />
                     <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/sobre" element={<div className="p-20 text-center">Sobre Nós (Em breve)</div>} />
+                    <Route path="/sobre" element={<About/>} />
                 </Route>
 
                 {/* Admin Routes */}
