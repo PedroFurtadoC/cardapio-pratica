@@ -257,7 +257,7 @@ export function AdminMenu() {
 
             {/* Modal de Formulário (Dialog) */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{editingProduct ? "Editar Produto" : "Novo Produto"}</DialogTitle>
                         <DialogDescription>

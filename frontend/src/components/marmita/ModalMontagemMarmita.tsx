@@ -123,8 +123,6 @@ export function ModalMontagemMarmita({
         <Dialog 
             open={isOpen} 
             onOpenChange={(open) => !open && onClose()}
-            title={`Montar ${produto.nome}`}
-            description={produto.descricao}
         >
             <div className="flex flex-col h-[65vh]"> {/* Altura fixa para permitir scroll interno */}
                 
