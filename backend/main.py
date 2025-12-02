@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from bson import ObjectId
 from datetime import datetime
-from pydantic import BaseModel # Importação necessária para o LoginRequest
+from pydantic import BaseModel 
 
 from db import db, usuarios_collection, produtos_collection, componentes_collection, pedidos_collection
 from models import (
@@ -14,10 +14,41 @@ from models import (
     Componente, ComponenteUpdate,
     Pedido, PedidoCreate, PedidoUpdateStatus
 )
-# IMPORTANTE: Adicione verify_password aqui
 from security import get_password_hash, verify_password 
 
-app = FastAPI(title="API Restaurante - CRUD Completo")
+# --- CONFIGURAÇÃO DO SWAGGER (METADADOS) ---
+tags_metadata = [
+    {
+        "name": "Auth",
+        "description": "Autenticação e Login de usuários.",
+    },
+    {
+        "name": "Usuarios",
+        "description": "Operações de CRUD para gerenciamento de usuários.",
+    },
+    {
+        "name": "Produtos",
+        "description": "Gerenciamento de itens do cardápio.",
+    },
+    {
+        "name": "Componentes",
+        "description": "Gerenciamento de ingredientes e adicionais.",
+    },
+    {
+        "name": "Pedidos",
+        "description": "Criação e atualização de status dos pedidos.",
+    },
+]
+
+# Inicialização com os metadados do Swagger
+app = FastAPI(
+    title="API Restaurante - CRUD Completo",
+    description="API backend para sistema de delivery. Acesse /docs para ver a documentação interativa.",
+    version="1.0.0",
+    openapi_tags=tags_metadata,
+    docs_url="/docs",   # URL da documentação Swagger UI
+    redoc_url="/redoc"  # URL da documentação ReDoc
+)
 
 # --- CONFIGURAÇÃO DO CORS ---
 origins = [
@@ -49,7 +80,7 @@ async def get_by_id(collection, id: str):
     return doc
 
 # ==========================================
-# ROTA DE AUTENTICAÇÃO (LOGIN) - CORREÇÃO DO ERRO
+# ROTA DE AUTENTICAÇÃO (LOGIN)
 # ==========================================
 
 @app.post("/auth/login", tags=["Auth"])
