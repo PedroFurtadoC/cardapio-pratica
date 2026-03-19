@@ -79,6 +79,14 @@ async def get_by_id(collection, id: str):
         raise HTTPException(status_code=404, detail="Item não encontrado")
     return doc
 
+# --- Rota de Health Check ---
+@app.get("/", tags=["Status"])
+async def root():
+    return {
+        "status": "online",
+        "mensagem": "API no ar e funcionando perfeitamente! 🚀"
+    }
+
 # Rotas de Autenticação
 
 @app.post("/auth/login", tags=["Auth"])
