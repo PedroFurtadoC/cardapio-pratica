@@ -79,9 +79,7 @@ async def get_by_id(collection, id: str):
         raise HTTPException(status_code=404, detail="Item não encontrado")
     return doc
 
-# ==========================================
-# ROTA DE AUTENTICAÇÃO (LOGIN)
-# ==========================================
+# Rotas de Autenticação
 
 @app.post("/auth/login", tags=["Auth"])
 async def login(data: LoginRequest):
@@ -96,16 +94,15 @@ async def login(data: LoginRequest):
     user["_id"] = str(user["_id"])
     user.pop("senha_hash", None) # Remover hash da senha por segurança
     
-    # 4. Retornar Token (Simulado) e Dados do Usuário
+    # 4. Retornar Token (Simulado temporariamente) e Dados do Usuário
+    # TODO: Implementar JWT real futuramente
     return {
-        "access_token": "token-falso-para-teste-frontend", 
+        "access_token": "mock_jwt_token_123", 
         "token_type": "bearer",
         "user": user
     }
 
-# ==========================================
-# CRUD USUARIOS
-# ==========================================
+# Rotas de Usuários
 
 @app.post("/usuarios", response_model=Usuario, status_code=201, tags=["Usuarios"])
 async def criar_usuario(usuario: UsuarioCreate):
@@ -144,9 +141,7 @@ async def deletar_usuario(id: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
-# ==========================================
-# CRUD COMPONENTES
-# ==========================================
+# Rotas de Componentes
 
 @app.post("/componentes", response_model=Componente, status_code=201, tags=["Componentes"])
 async def criar_componente(componente: Componente):
@@ -171,9 +166,7 @@ async def deletar_componente(id: str):
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Componente não encontrado")
 
-# ==========================================
-# CRUD PRODUTOS
-# ==========================================
+# Rotas de Produtos
 
 @app.post("/produtos", response_model=Produto, status_code=201, tags=["Produtos"])
 async def criar_produto(produto: Produto):
@@ -198,9 +191,7 @@ async def deletar_produto(id: str):
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
 
-# ==========================================
-# CRUD PEDIDOS
-# ==========================================
+# Rotas de Pedidos
 
 @app.post("/pedidos", response_model=Pedido, status_code=201, tags=["Pedidos"])
 async def criar_pedido(pedido_in: PedidoCreate):
