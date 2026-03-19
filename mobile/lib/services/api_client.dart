@@ -19,7 +19,7 @@ class ApiClient {
   factory ApiClient() => _instance;
   ApiClient._internal();
 
-  final String baseUrl = const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:8000');
+  final String baseUrl = const String.fromEnvironment('API_URL', defaultValue: 'https://cardapio-pratica.onrender.com');
 
   final Map<String, String> _defaultHeaders = {
     'Content-Type': 'application/json',

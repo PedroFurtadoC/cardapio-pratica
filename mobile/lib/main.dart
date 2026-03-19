@@ -1,6 +1,8 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart'; // Adicione o import
+import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/admin_screen.dart';
 
 void main() {
   runApp(const MainApp());
@@ -17,7 +19,12 @@ class MainApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         useMaterial3: true,
       ),
-      home: const LoginScreen(), // Troque aqui!
+      initialRoute: '/', 
+      routes: {
+        '/': (context) => const HomeScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/admin': (context) => const AdminScreen(),
+      },
     );
   }
 }

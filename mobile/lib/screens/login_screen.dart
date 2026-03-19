@@ -28,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -48,8 +48,8 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
       
-      // navigate("/admin");
-      // Navigator.pushReplacementNamed(context, '/admin');
+      // Aqui a mágica acontece: navega para o painel admin e remove a tela de login da pilha
+      Navigator.pushReplacementNamed(context, '/admin');
 
     } on ApiError catch (_) {
       if (!mounted) return;
