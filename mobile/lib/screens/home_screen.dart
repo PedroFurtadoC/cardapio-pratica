@@ -1,57 +1,13 @@
-// lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/produto_list.dart';
 import '../models/pedido.dart';
+import '../providers/carrinho_provider.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  final List<ItemPedidoEmbutido> _carrinho = [];
-
-  void _adicionarAoCarrinho(ItemPedidoEmbutido novoItem) {
-    setState(() {
-      final indexExistente = _carrinho.indexWhere(
-        (item) => item.nomeProduto == novoItem.nomeProduto,
-      );
-
-      if (indexExistente != -1) {
-        final itemAtual = _carrinho[indexExistente];
-        _carrinho[indexExistente] = ItemPedidoEmbutido(
-          nomeProduto: itemAtual.nomeProduto,
-          precoUnitario: itemAtual.precoUnitario,
-          quantidade: itemAtual.quantidade + novoItem.quantidade,
-          selecoes: itemAtual.selecoes,
-        );
-      } else {
-        _carrinho.add(novoItem);
-      }
-    });
-  }
-
-  // Calcula a quantidade total de itens (ex: 2 cocas + 1 marmita = 3 itens)
-  int get _quantidadeTotal {
-    return _carrinho.fold(0, (total, item) => total + item.quantidade);
-  }
-
-  // Calcula o valor total do carrinho em centavos
-  int get _valorTotalCentavos {
-    return _carrinho.fold(0, (total, item) => total + (item.precoUnitario * item.quantidade));
-  }
-
-  // Função para limpar um item do carrinho
-  void _removerDoCarrinho(int index) {
-    setState(() {
-      _carrinho.removeAt(index);
-    });
-  }
-
-  // Exibe o resumo do pedido num BottomSheet
-  void _mostrarResumoPedido() {
+  void _mostrarResumoPedido(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -59,10 +15,8 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            final valorFormatado = 'R\$ ${(_valorTotalCentavos / 100).toStringAsFixed(2).replaceAll('.', ',')}';
-
+        return Consumer<CarrinhoProvider>(
+          builder: (context, carrinho, _) {
             return Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -75,30 +29,31 @@ class _HomeScreenState extends State<HomeScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const Divider(height: 32),
-                  
-                  if (_carrinho.isEmpty)
+
+                  if (carrinho.isEmpty)
                     const Center(child: Text('Carrinho vazio.'))
                   else
-                    ..._carrinho.asMap().entries.map((entry) {
+                    ...carrinho.itens.asMap().entries.map((entry) {
                       final index = entry.key;
                       final item = entry.value;
-                      final precoItem = 'R\$ ${((item.precoUnitario * item.quantidade) / 100).toStringAsFixed(2).replaceAll('.', ',')}';
-                      
+                      final precoItem =
+                          'R\$ ${((item.precoUnitario * item.quantidade) / 100).toStringAsFixed(2).replaceAll('.', ',')}';
+
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text('${item.quantidade}x ${item.nomeProduto}'),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(precoItem, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text(precoItem,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold)),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              icon: const Icon(Icons.delete_outline,
+                                  color: Colors.red),
                               onPressed: () {
-                                setModalState(() {
-                                  _removerDoCarrinho(index);
-                                });
-                                // Se esvaziou o carrinho, fecha o modal
-                                if (_carrinho.isEmpty) {
+                                carrinho.remover(index);
+                                if (carrinho.isEmpty) {
                                   Navigator.pop(context);
                                 }
                               },
@@ -107,32 +62,39 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       );
                     }),
-                  
+
                   const Divider(height: 32),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text(valorFormatado, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
+                      const Text('Total:',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(
+                        carrinho.valorTotalFormatado,
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
-                  // Botão para prosseguir
+
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
                     ),
-                    onPressed: _carrinho.isEmpty ? null : () {
-                      Navigator.pop(context); // Fecha o BottomSheet
-                      // TODO: Navegar para a tela de Checkout (onde pede endereço, nome, etc)
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Indo para o pagamento...')),
-                      );
-                    },
-                    child: const Text('Avançar para Pagamento', style: TextStyle(fontSize: 16)),
+                    onPressed: carrinho.isEmpty
+                        ? null
+                        : () {
+                            Navigator.pop(context); 
+                            Navigator.pushNamed(context, '/checkout');
+                          },
+                    child: const Text('Avançar para Pagamento',
+                        style: TextStyle(fontSize: 16)),
                   ),
                 ],
               ),
@@ -145,6 +107,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final carrinho = context.watch<CarrinhoProvider>();
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -154,25 +118,27 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.admin_panel_settings),
             tooltip: 'Acesso Restrito',
-            onPressed: () {
-              Navigator.pushNamed(context, '/login');
-            },
+            onPressed: () => Navigator.pushNamed(context, '/login'),
           ),
         ],
       ),
-      body: ProdutoList(onItemAdded: _adicionarAoCarrinho),
-      floatingActionButton: _carrinho.isNotEmpty
-          ? FloatingActionButton.extended(
-              onPressed: _mostrarResumoPedido,
+      body: ProdutoList(
+        onItemAdded: (ItemPedidoEmbutido item) {
+          context.read<CarrinhoProvider>().adicionar(item);
+        },
+      ),
+      floatingActionButton: carrinho.isEmpty
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => _mostrarResumoPedido(context),
               backgroundColor: Theme.of(context).primaryColor,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.shopping_cart),
               label: Text(
-                '$_quantidadeTotal itens • R\$ ${(_valorTotalCentavos / 100).toStringAsFixed(2).replaceAll('.', ',')}',
+                '${carrinho.quantidadeTotal} itens • ${carrinho.valorTotalFormatado}',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-            )
-          : null,
+            ),
     );
   }
 }
