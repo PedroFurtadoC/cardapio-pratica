@@ -12,7 +12,7 @@ from models import (
     Usuario, UsuarioCreate, UsuarioUpdate,
     Produto, ProdutoUpdate,
     Componente, ComponenteUpdate,
-    Pedido, PedidoCreate, PedidoUpdateStatus
+    Pedido, PedidoCreate, PedidoUpdateStatus, PedidoUpdate
 )
 from security import get_password_hash, verify_password 
 
@@ -84,7 +84,7 @@ async def get_by_id(collection, id: str):
 async def root():
     return {
         "status": "online",
-        "mensagem": "API no ar e funcionando perfeitamente! 🚀"
+        "mensagem": "API no ar!"
     }
 
 # Rotas de Autenticação
@@ -238,4 +238,11 @@ async def atualizar_status_pedido(id: str, status_update: PedidoUpdateStatus):
         {"_id": ObjectId(id)}, 
         {"$set": {"status": status_update.status}}
     )
+    return await get_by_id(pedidos_collection, id)
+
+@app.put("/pedidos/{id}", response_model=Pedido, tags=["Pedidos"])
+async def atualizar_pedido_completo(id: str, pedido_update: PedidoUpdate):
+    update_data = {k: v for k, v in pedido_update.model_dump().items() if v is not None}
+    if update_data:
+        await pedidos_collection.update_one({"_id": ObjectId(id)}, {"$set": update_data})
     return await get_by_id(pedidos_collection, id)

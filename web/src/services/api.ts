@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// Variável de ambiente do Vite ou URL de produção no Render como fallback (padrão)
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://cardapio-pratica.onrender.com';
+
 const api = axios.create({
-  baseURL: 'http://54.167.29.152:8000', 
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },

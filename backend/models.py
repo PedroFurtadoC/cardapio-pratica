@@ -146,3 +146,14 @@ class PedidoCreate(BaseModel):
 
 class PedidoUpdateStatus(BaseModel):
     status: StatusPedido
+
+class PedidoUpdate(BaseModel):
+    cliente: Optional[ClienteEmbedded] = None
+    modalidade: Optional[ModalidadeEntrega] = None
+    entrega: Optional[EnderecoEntrega] = None
+    forma_pagamento: Optional[FormaPagamento] = None
+    itens: Optional[List[ItemPedidoEmbutido]] = None
+    status: Optional[StatusPedido] = None
+    valor_produtos_centavos: Optional[int] = None
+    taxa_entrega_centavos: Optional[int] = None
+    valor_total_centavos: Optional[int] = None
