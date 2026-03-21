@@ -14,12 +14,10 @@ __pycache__/
 .vscode/
 *.code-workspace
 
-# --- Frontend (React/Vite) ---
-frontend/node_modules/
-frontend/dist/
-frontend/build/
-frontend/.env
-frontend/.env.local
-frontend/npm-debug.log
-frontend/yarn-error.log
-frontend/package-lock.json
+# --- Web (React/Vite) ---
+web/node_modules/
+web/dist/
+web/build/
+web/.env*
+web/npm-debug.log
+web/yarn-error.log
