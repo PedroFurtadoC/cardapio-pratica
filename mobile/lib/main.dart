@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:device_preview/device_preview.dart';
@@ -13,13 +14,13 @@ import 'screens/forgot_password_screen.dart';
 import 'screens/about_screen.dart';
 import 'screens/admin_add_produto_screen.dart';
 
-
+// Ativa o DevicePreview somente em modo de desenvolvimento
 void main() {
   runApp(
     ChangeNotifierProvider(
       create: (_) => CarrinhoProvider(),
       child: DevicePreview(
-        enabled: true,
+        enabled: !kReleaseMode,
         builder: (context) => const MainApp(),
       ),
     ),
