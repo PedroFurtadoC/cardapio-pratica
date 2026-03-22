@@ -1,4 +1,4 @@
-// lib/models/usuario.dart
+// Modelagem de dados do usuário do sistema
 import 'enums.dart';
 
 class Usuario {

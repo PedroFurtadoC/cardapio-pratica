@@ -1,4 +1,4 @@
-// lib/screens/login_screen.dart
+// Tela de acesso restrito para administração
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/api_client.dart';
@@ -48,7 +48,7 @@ Future<void> _handleLogin() async {
         ),
       );
       
-      // Aqui a mágica acontece: navega para o painel admin e remove a tela de login da pilha
+      // Navega para o painel administrativo e limpa o histórico de navegação
       Navigator.pushReplacementNamed(context, '/admin');
 
     } on ApiError catch (_) {
@@ -74,22 +74,22 @@ Future<void> _handleLogin() async {
 
   @override
   Widget build(BuildContext context) {
-    // Scaffold com fundo cinza claro (bg-gray-100)
+    // Estrutura principal com fundo em tom de cinza claro
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0), // p-4
+          padding: const EdgeInsets.all(16.0), // Espaçamento interno padrão
           child: Container(
             width: double.infinity,
             constraints: const BoxConstraints(maxWidth: 400),
-            padding: const EdgeInsets.all(32.0), // p-8
+            padding: const EdgeInsets.all(32.0), // Preenchimento generoso para o formulário
             decoration: BoxDecoration(
-              color: Colors.white, // bg-white
-              borderRadius: BorderRadius.circular(12), // rounded-xl
+              color: Colors.white, // Fundo branco sólido
+              borderRadius: BorderRadius.circular(12), // Bordas arredondadas e modernas
               boxShadow: const [
                 BoxShadow(
-                  color: Colors.black12, // shadow-lg leve
+                  color: Colors.black12, // Sombra suave para o efeito de elevação
                   blurRadius: 10,
                   offset: Offset(0, 4),
                 ),
@@ -105,38 +105,38 @@ Future<void> _handleLogin() async {
                   Column(
                     children: [
                       Container(
-                        height: 64, // h-16
-                        width: 64, // w-16
+                        height: 64, // Altura do círculo do ícone
+                        width: 64, // Largura do círculo do ícone
                         decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1), // bg-primary/10
+                          color: Theme.of(context).primaryColor.withValues(alpha: 0.1), // Fundo suave com a cor primária
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.lock_outline,
                           size: 32, // h-8 w-8
-                          color: Theme.of(context).primaryColor, // text-primary
+                          color: Theme.of(context).primaryColor, // Cor oficial do ícone
                         ),
                       ),
                       const SizedBox(height: 16), // mb-4
                       const Text(
                         'Área Restrita',
                         style: TextStyle(
-                          fontSize: 24, // text-2xl
-                          fontWeight: FontWeight.bold, // font-bold
-                          color: Colors.black87, // text-gray-900
+                          fontSize: 24, // Tamanho de destaque para o título
+                          fontWeight: FontWeight.bold, // Texto em negrito
+                          color: Colors.black87, // Tom de preto suave para legibilidade
                         ),
                       ),
                       const SizedBox(height: 4),
                       const Text(
                         'Acesso exclusivo para administração',
                         style: TextStyle(
-                          fontSize: 14, // text-sm
-                          color: Colors.black54, // text-gray-500
+                          fontSize: 14, // Fonte pequena para o subtítulo
+                          color: Colors.black54, // Cinza escuro discreto
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32), // mb-8 (espaço entre header e form)
+                  const SizedBox(height: 32), // Espaçamento entre o cabeçalho e os campos
 
                   // Campos do Formulário
                   const Text(
@@ -148,7 +148,12 @@ Future<void> _handleLogin() async {
                     controller: _emailController,
                     hintText: 'admin@restaurante.com',
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) => value!.isEmpty ? 'Campo obrigatório' : null,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return 'Campo obrigatório';
+                      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                      if (!emailRegex.hasMatch(value)) return 'Email inválido';
+                      return null;
+                    },
                   ),
                   
                   const SizedBox(height: 16),
@@ -165,13 +170,32 @@ Future<void> _handleLogin() async {
                     validator: (value) => value!.isEmpty ? 'Campo obrigatório' : null,
                   ),
                   
-                  const SizedBox(height: 24), // space-y-4 compensado
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
+                      child: const Text('Esqueceu a senha?', style: TextStyle(fontSize: 12)),
+                    ),
+                  ),
+                  const SizedBox(height: 16), // Espaço de segurança vertical
 
                   // Botão Entrar
-                  CustomButton(
+                   CustomButton(
                     text: _isLoading ? 'Entrando...' : 'Entrar',
                     isLoading: _isLoading,
                     onPressed: _handleLogin,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('Não tem uma conta?'),
+                      TextButton(
+                        onPressed: () => Navigator.pushNamed(context, '/register'),
+                        child: const Text('Cadastre-se'),
+                      ),
+                    ],
                   ),
                 ],
               ),

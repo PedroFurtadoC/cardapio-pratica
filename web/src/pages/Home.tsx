@@ -47,7 +47,7 @@ export function Home() {
         { id: "SALGADOS", label: "Salgados" },
         { id: "BEBIDAS", label: "Bebidas" },
         { id: "SOBREMESAS", label: "Sobremesas" },
-        { id: "PRATOS_PRONTOS", label: "Pratos Prontos" },
+        { id: "PRATOS PRONTOS", label: "Pratos Prontos" },
     ];
 
     const filteredProducts = selectedCategory === "TODOS"

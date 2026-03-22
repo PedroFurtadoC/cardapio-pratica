@@ -1,4 +1,4 @@
-// lib/services/api_client.dart
+// Cliente base para requisições HTTP e tratamento de erros
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;

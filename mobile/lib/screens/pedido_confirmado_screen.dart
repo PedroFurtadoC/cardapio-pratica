@@ -43,22 +43,37 @@ class PedidoConfirmadoScreen extends StatelessWidget {
                 const SizedBox(height: 32),
 
                 Card(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _InfoRow(
-                            label: 'Cliente', value: pedido.cliente.nome),
-                        _InfoRow(
-                            label: 'Modalidade',
-                            value: pedido.modalidade.value),
-                        _InfoRow(
-                            label: 'Pagamento',
-                            value: pedido.formaPagamento.value),
-                        _InfoRow(label: 'Total', value: valorFormatado),
+                        const Text('Resumo do Pedido', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                        const Divider(height: 24),
+                        ...pedido.itens.map((item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('${item.quantidade}x ${item.nomeProduto}'),
+                              Text('R\$ ${(item.precoUnitario * item.quantidade / 100).toStringAsFixed(2).replaceAll('.', ',')}'),
+                            ],
+                          ),
+                        )),
+                        const Divider(height: 24),
+                        _InfoRow(label: 'Cliente', value: pedido.cliente.nome),
+                        _InfoRow(label: 'Modalidade', value: pedido.modalidade.label),
+                        _InfoRow(label: 'Pagamento', value: pedido.formaPagamento.label),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Total Pago', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text(valorFormatado, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).primaryColor)),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -97,8 +112,9 @@ class PedidoConfirmadoScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(30)),
                     ),
                     onPressed: () {
                       Navigator.pushNamedAndRemoveUntil(

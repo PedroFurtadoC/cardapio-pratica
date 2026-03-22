@@ -1,4 +1,4 @@
-// lib/widgets/custom_input.dart
+// Campo de entrada de texto personalizado
 import 'package:flutter/material.dart';
 
 class CustomInput extends StatelessWidget {
@@ -8,6 +8,8 @@ class CustomInput extends StatelessWidget {
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
   final Widget? suffixIcon;
+  final int maxLines;
+  final void Function(String)? onChanged;
 
   const CustomInput({
     super.key,
@@ -17,6 +19,8 @@ class CustomInput extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.validator,
     this.suffixIcon,
+    this.maxLines = 1,
+    this.onChanged,
   });
 
   @override
@@ -26,6 +30,8 @@ class CustomInput extends StatelessWidget {
       obscureText: obscureText,
       keyboardType: keyboardType,
       validator: validator,
+      maxLines: maxLines,
+      onChanged: onChanged,
       style: const TextStyle(fontSize: 14, color: Colors.black87),
       decoration: InputDecoration(
         hintText: hintText,
@@ -33,19 +39,19 @@ class CustomInput extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.black12),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.black12),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.redAccent),
         ),
       ),

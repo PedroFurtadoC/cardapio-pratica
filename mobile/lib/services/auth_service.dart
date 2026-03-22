@@ -1,4 +1,4 @@
-// lib/services/auth_service.dart
+// Serviço responsável pela autenticação e controle de acesso
 import '../models/auth_response.dart';
 import 'api_client.dart';
 
@@ -15,5 +15,12 @@ class AuthService {
     );
     
     return AuthResponse.fromJson(response as Map<String, dynamic>);
+  }
+
+  Future<void> recuperarSenha(String email) async {
+    await _client.post(
+      '/auth/recuperar-senha',
+      data: {'email': email},
+    );
   }
 }

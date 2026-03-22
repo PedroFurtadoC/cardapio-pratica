@@ -1,4 +1,4 @@
-// lib/widgets/produto_list.dart
+// Lista de produtos com filtro por categoria
 import 'package:flutter/material.dart';
 import '../models/produto.dart';
 import '../models/pedido.dart';
@@ -7,8 +7,13 @@ import 'produto_card.dart';
 
 class ProdutoList extends StatefulWidget {
   final Function(ItemPedidoEmbutido) onItemAdded;
+  final String selectedCategory;
 
-  const ProdutoList({super.key, required this.onItemAdded});
+  const ProdutoList({
+    super.key,
+    required this.onItemAdded,
+    this.selectedCategory = 'TODOS',
+  });
 
   @override
   State<ProdutoList> createState() => _ProdutoListState();
@@ -41,9 +46,13 @@ class _ProdutoListState extends State<ProdutoList> {
         if (snapshot.hasError) {
           return const Center(child: Text('Erro ao carregar produtos.'));
         }
-        final produtos = snapshot.data ?? [];
+        final allProdutos = snapshot.data ?? [];
+        final produtos = widget.selectedCategory == 'TODOS'
+            ? allProdutos
+            : allProdutos.where((p) => p.categoria.value == widget.selectedCategory).toList();
+
         if (produtos.isEmpty) {
-          return const Center(child: Text('Nenhum produto disponível.'));
+          return const Center(child: Text('Nenhum produto disponível nesta categoria.'));
         }
 
         return RefreshIndicator(

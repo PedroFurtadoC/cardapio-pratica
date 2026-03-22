@@ -1,4 +1,4 @@
-// lib/models/pedido.dart
+// Definições de modelos de dados para Pedidos
 
 import 'enums.dart';
 

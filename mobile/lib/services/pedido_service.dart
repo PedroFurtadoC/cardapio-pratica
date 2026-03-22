@@ -1,4 +1,4 @@
-// lib/services/pedido_service.dart
+// Comunicação com a API para gestão de pedidos
 import '../models/pedido.dart';
 import '../models/enums.dart';
 import 'api_client.dart';

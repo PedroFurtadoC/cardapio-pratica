@@ -1,4 +1,4 @@
-// lib/services/produto_service.dart
+// Consumo de dados de produtos e categorias
 
 import '../models/produto.dart';
 import 'api_client.dart';

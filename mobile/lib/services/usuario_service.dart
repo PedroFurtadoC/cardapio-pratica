@@ -1,4 +1,4 @@
-// lib/services/usuario_service.dart
+// Gestão de perfis e cadastros de usuários
 import '../models/usuario.dart';
 import 'api_client.dart';
 

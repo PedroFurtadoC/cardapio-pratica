@@ -1,4 +1,4 @@
-// lib/models/auth_response.dart
+// Estrutura de resposta para autenticação
 import 'usuario.dart';
 
 class AuthResponse {

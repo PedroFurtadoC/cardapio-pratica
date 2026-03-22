@@ -1,4 +1,4 @@
-// lib/models/produto.dart
+// Definições de modelos de dados para Produtos
 
 import 'enums.dart';
 

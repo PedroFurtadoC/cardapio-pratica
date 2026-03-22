@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/enums.dart';
-import '../models/pedido.dart';
 import '../providers/carrinho_provider.dart';
 import '../services/pedido_service.dart';
 import '../widgets/custom_input.dart';
@@ -45,9 +44,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<void> _finalizarPedido() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
-
     final carrinho = context.read<CarrinhoProvider>();
+
+    // Solicitar confirmação final (Requisito RF009)
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Pedido'),
+        content: Text(
+          'Deseja realmente finalizar seu pedido no valor de ${carrinho.valorTotalFormatado}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Revisar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Finalizar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    setState(() => _isLoading = true);
 
     try {
       final pedidoData = {
@@ -98,8 +124,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Finalizar Pedido'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: const Text('Finalizar Pedido', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: false,
       ),
       body: Form(
         key: _formKey,
@@ -191,7 +217,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   (m) => RadioListTile<ModalidadeEntrega>(
                     value: m,
                     groupValue: _modalidade,
-                    title: Text(_labelModalidade(m)),
+                    title: Text(m.label),
                     contentPadding: EdgeInsets.zero,
                     onChanged: (v) => setState(() => _modalidade = v!),
                   ),
@@ -251,7 +277,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   (f) => RadioListTile<FormaPagamento>(
                     value: f,
                     groupValue: _formaPagamento,
-                    title: Text(_labelPagamento(f)),
+                    title: Text(f.label),
                     contentPadding: EdgeInsets.zero,
                     onChanged: (v) => setState(() => _formaPagamento = v!),
                   ),
@@ -272,28 +298,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
       ),
     );
-  }
-
-  String _labelModalidade(ModalidadeEntrega m) {
-    switch (m) {
-      case ModalidadeEntrega.delivery:
-        return '🛵 Delivery';
-      case ModalidadeEntrega.retirada:
-        return '🏃 Retirada no local';
-      case ModalidadeEntrega.balcao:
-        return '🪑 Consumir no balcão';
-    }
-  }
-
-  String _labelPagamento(FormaPagamento f) {
-    switch (f) {
-      case FormaPagamento.pix:
-        return '📱 PIX';
-      case FormaPagamento.credito:
-        return '💳 Cartão de Crédito';
-      case FormaPagamento.debito:
-        return '💳 Cartão de Débito';
-    }
   }
 }
 

@@ -1,4 +1,4 @@
-// lib/widgets/produto_card.dart
+// Componente de cartão para exibição de produtos
 import 'package:flutter/material.dart';
 import '../models/produto.dart';
 import '../models/pedido.dart';
@@ -101,7 +101,11 @@ class _ProdutoCardState extends State<ProdutoCard> {
                       const SizedBox(height: 8),
                       Text(
                         precoFormatado,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green),
+                        style: TextStyle(
+                          fontSize: 18, 
+                          fontWeight: FontWeight.w800, 
+                          color: Theme.of(context).primaryColor,
+                        ),
                       ),
                     ],
                   ),
@@ -135,6 +139,10 @@ class _ProdutoCardState extends State<ProdutoCard> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).primaryColor,
                     foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 )
               ],

@@ -1,4 +1,4 @@
-// lib/widgets/custom_button.dart
+// Botão estilizado de acordo com a identidade visual
 import 'package:flutter/material.dart';
 
 class CustomButton extends StatelessWidget {
@@ -17,16 +17,16 @@ class CustomButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 40,
+      height: 50,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).primaryColor,
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(30),
           ),
-          disabledBackgroundColor: Theme.of(context).primaryColor.withOpacity(0.5),
+          disabledBackgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.5),
         ),
         onPressed: isLoading ? null : onPressed,
         child: isLoading
