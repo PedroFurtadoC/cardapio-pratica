@@ -34,6 +34,13 @@ class _AdminScreenState extends State<AdminScreen> {
           ),
           actions: [
             IconButton(
+              icon: const Icon(Icons.storefront),
+              tooltip: 'Ver Cardápio',
+              onPressed: () {
+                Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+              },
+            ),
+            IconButton(
               icon: const Icon(Icons.logout),
               tooltip: 'Sair',
               onPressed: () {

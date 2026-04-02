@@ -119,7 +119,7 @@ class _AdminAddProdutoScreenState extends State<AdminAddProdutoScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: DropdownButtonFormField<CategoriaProduto>(
-                      value: _categoria,
+                      initialValue: _categoria,
                       decoration: InputDecoration(
                         labelText: 'Categoria',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -152,7 +152,7 @@ class _AdminAddProdutoScreenState extends State<AdminAddProdutoScreen> {
                     height: 150,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    errorBuilder: (_, _, _) => Container(
                       height: 150,
                       color: Colors.grey[200],
                       child: const Center(child: Text('URL da imagem inválida')),
@@ -164,7 +164,7 @@ class _AdminAddProdutoScreenState extends State<AdminAddProdutoScreen> {
               const Text('Configurações Técnicas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const Divider(),
               DropdownButtonFormField<TipoProduto>(
-                value: _tipo,
+                initialValue: _tipo,
                 decoration: InputDecoration(
                   labelText: 'Tipo de Produto',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -179,7 +179,7 @@ class _AdminAddProdutoScreenState extends State<AdminAddProdutoScreen> {
                 title: const Text('Produto Ativo no Cardápio'),
                 subtitle: const Text('Se desativado, não aparecerá para os clientes'),
                 value: _ativo,
-                activeColor: Theme.of(context).primaryColor,
+                activeThumbColor: Theme.of(context).primaryColor,
                 onChanged: (v) => setState(() => _ativo = v),
               ),
               const SizedBox(height: 32),
