@@ -1,6 +1,6 @@
 # Cardápio Digital - Prática Extensionista VII e VIII
 
-Este projeto consolida o ecossistema do nosso sistema de cardápio digital. Ele serve como base tanto para o painel administrativo na web quanto para o aplicativo mobile que será desenvolvido, compartilhando o mesmo serviço backend.
+Este projeto consolida o ecossistema do nosso sistema de cardápio digital. Ele serve como base tanto para o painel administrativo na web quanto para o aplicativo mobile, ambos compartilhando o mesmo serviço backend.
 
 ## Estrutura do Projeto
 
@@ -8,7 +8,7 @@ O repositório está organizado em três partes principais para facilitar o trab
 
 - **backend/**: É a API central do sistema, desenvolvida em Python com FastAPI e MongoDB. Ela já gerencia usuários, produtos, adicionais e pedidos. Como é uma API RESTful, ela atende simultaneamente o site e o aplicativo de forma agnóstica.
 - **web/**: O painel administrativo e a visão web do sistema, focado em gerenciar o negócio. Foi montado em React com Vite e Tailwind.
-- **mobile/**: O diretório destinado à construção do aplicativo mobile, que faremos em Flutter. A finalidade do app é consumir de forma direta o nosso backend.
+- **mobile/**: O aplicativo mobile, feito em Flutter. Os clientes navegam pelo cardápio (consumido da nossa API) e a autenticação dos clientes é feita com Firebase. Já está publicado como WebApp em https://cardapio-coracao-de-mae.web.app.
 
 ## Ambiente de Desenvolvimento
 

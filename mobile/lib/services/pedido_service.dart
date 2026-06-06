@@ -12,11 +12,6 @@ class PedidoService {
     return data.map((json) => Pedido.fromJson(json as Map<String, dynamic>)).toList();
   }
 
-  Future<Pedido> verPedido(String id) async {
-    final response = await _client.get('/pedidos/$id');
-    return Pedido.fromJson(response as Map<String, dynamic>);
-  }
-
   Future<Pedido> criarPedido(Map<String, dynamic> pedidoCreateData) async {
     final response = await _client.post('/pedidos', data: pedidoCreateData);
     return Pedido.fromJson(response as Map<String, dynamic>);

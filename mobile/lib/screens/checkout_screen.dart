@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/enums.dart';
 import '../providers/carrinho_provider.dart';
 import '../services/pedido_service.dart';
@@ -27,6 +28,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   ModalidadeEntrega _modalidade = ModalidadeEntrega.retirada;
   FormaPagamento _formaPagamento = FormaPagamento.pix;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pré-preenche o nome com o do cliente autenticado.
+    final user = FirebaseAuth.instance.currentUser;
+    final nome = user?.displayName?.trim();
+    if (nome != null && nome.isNotEmpty) {
+      _nomeController.text = nome;
+    }
+  }
 
   @override
   void dispose() {
@@ -213,13 +225,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               title: 'Como deseja receber?',
               icon: Icons.delivery_dining_outlined,
               children: [
-                ...ModalidadeEntrega.values.map(
-                  (m) => RadioListTile<ModalidadeEntrega>(
-                    value: m,
-                    groupValue: _modalidade,
-                    title: Text(m.label),
-                    contentPadding: EdgeInsets.zero,
-                    onChanged: (v) => setState(() => _modalidade = v!),
+                RadioGroup<ModalidadeEntrega>(
+                  groupValue: _modalidade,
+                  onChanged: (v) => setState(() => _modalidade = v!),
+                  child: Column(
+                    children: ModalidadeEntrega.values
+                        .map(
+                          (m) => RadioListTile<ModalidadeEntrega>(
+                            value: m,
+                            title: Text(m.label),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        )
+                        .toList(),
                   ),
                 ),
 
@@ -273,13 +291,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               title: 'Forma de Pagamento',
               icon: Icons.payment_outlined,
               children: [
-                ...FormaPagamento.values.map(
-                  (f) => RadioListTile<FormaPagamento>(
-                    value: f,
-                    groupValue: _formaPagamento,
-                    title: Text(f.label),
-                    contentPadding: EdgeInsets.zero,
-                    onChanged: (v) => setState(() => _formaPagamento = v!),
+                RadioGroup<FormaPagamento>(
+                  groupValue: _formaPagamento,
+                  onChanged: (v) => setState(() => _formaPagamento = v!),
+                  child: Column(
+                    children: FormaPagamento.values
+                        .map(
+                          (f) => RadioListTile<FormaPagamento>(
+                            value: f,
+                            title: Text(f.label),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        )
+                        .toList(),
                   ),
                 ),
               ],

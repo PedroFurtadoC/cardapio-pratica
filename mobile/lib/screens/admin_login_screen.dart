@@ -1,23 +1,23 @@
-// Tela de login do cliente, autenticada pelo Firebase Authentication.
+// Tela de acesso restrito à administração (autenticação via API).
 import 'package:flutter/material.dart';
-import '../services/firebase_auth_service.dart';
+import '../services/admin_auth_service.dart';
+import '../services/api_client.dart';
 import '../widgets/custom_input.dart';
 import '../widgets/custom_button.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class AdminLoginScreen extends StatefulWidget {
+  const AdminLoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<AdminLoginScreen> createState() => _AdminLoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  final FirebaseAuthService _authService = FirebaseAuthService();
-
+  final AdminAuthService _authService = AdminAuthService();
   bool _isLoading = false;
 
   @override
@@ -33,29 +33,35 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.entrar(
-        email: _emailController.text.trim(),
-        senha: _passwordController.text,
+      final ehAdmin = await _authService.login(
+        _emailController.text.trim(),
+        _passwordController.text,
       );
 
       if (!mounted) return;
-      // Retorna ao fluxo de origem (cardápio ou checkout), já autenticado.
-      Navigator.popUntil(context, (route) {
-        final nome = route.settings.name;
-        return nome != '/login' && nome != '/register';
-      });
-    } on AuthFalha catch (e) {
+
+      if (ehAdmin) {
+        Navigator.pushReplacementNamed(context, '/admin');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Esta conta não tem acesso administrativo.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } on ApiError catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.mensagem), backgroundColor: Colors.redAccent),
+        const SnackBar(
+          content: Text('Credenciais inválidas ou erro no servidor.'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível entrar. Tente novamente.'),
-          backgroundColor: Colors.redAccent,
-        ),
+        const SnackBar(content: Text('Erro de conexão.'), backgroundColor: Colors.redAccent),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -66,6 +72,14 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
@@ -77,11 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                ),
+                BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4)),
               ],
             ),
             child: Form(
@@ -90,46 +100,35 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Cabeçalho com a marca do estabelecimento
                   Column(
                     children: [
-                      Image.asset(
-                        'assets/logo.png',
-                        height: 72,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => Icon(
-                          Icons.restaurant_menu,
-                          size: 48,
-                          color: Theme.of(context).primaryColor,
+                      Container(
+                        height: 64,
+                        width: 64,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
                         ),
+                        child: Icon(Icons.lock_outline, size: 32, color: Theme.of(context).primaryColor),
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'Bem-vindo!',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
+                        'Área Restrita',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Entre para finalizar seu pedido',
-                        textAlign: TextAlign.center,
+                        'Acesso exclusivo para administração',
                         style: TextStyle(fontSize: 14, color: Colors.black54),
                       ),
                     ],
                   ),
                   const SizedBox(height: 32),
-
-                  const Text(
-                    'Email',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
-                  ),
+                  const Text('Email', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87)),
                   const SizedBox(height: 8),
                   CustomInput(
                     controller: _emailController,
-                    hintText: 'voce@email.com',
+                    hintText: 'admin@coracaodemae.com',
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'Campo obrigatório';
@@ -138,13 +137,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       return null;
                     },
                   ),
-
                   const SizedBox(height: 16),
-
-                  const Text(
-                    'Senha',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
-                  ),
+                  const Text('Senha', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87)),
                   const SizedBox(height: 8),
                   CustomInput(
                     controller: _passwordController,
@@ -152,32 +146,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscureText: true,
                     validator: (value) => value!.isEmpty ? 'Campo obrigatório' : null,
                   ),
-
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
-                      child: const Text('Esqueceu a senha?', style: TextStyle(fontSize: 12)),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
+                  const SizedBox(height: 24),
                   CustomButton(
                     text: _isLoading ? 'Entrando...' : 'Entrar',
                     isLoading: _isLoading,
                     onPressed: _handleLogin,
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('Não tem uma conta?'),
-                      TextButton(
-                        onPressed: () => Navigator.pushNamed(context, '/register'),
-                        child: const Text('Cadastre-se'),
-                      ),
-                    ],
                   ),
                 ],
               ),

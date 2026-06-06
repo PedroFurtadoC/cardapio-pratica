@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "840471989431",
+    "project_id": "cardapio-coracao-de-mae",
+    "storage_bucket": "cardapio-coracao-de-mae.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:840471989431:android:e873e930ad3ce74de05132",
+        "android_client_info": {
+          "package_name": "com.example.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCEXK0pNIBpwfi_PeTxa5mDjx1ijjKbrCw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

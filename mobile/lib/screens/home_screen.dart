@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/produto_list.dart';
 import '../models/pedido.dart';
 import '../providers/carrinho_provider.dart';
@@ -23,6 +24,74 @@ class _HomeScreenState extends State<HomeScreen> {
     {'id': 'PRATOS PRONTOS', 'label': 'Pratos Prontos'},
   ];
 
+  Future<void> _sair() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sair da conta'),
+        content: const Text('Deseja realmente encerrar a sessão?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sair')),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+    await FirebaseAuth.instance.signOut();
+    // A AppBar reage ao logout (StreamBuilder) e volta a exibir "Entrar".
+  }
+
+  /// O cardápio é aberto, mas finalizar o pedido exige uma conta. Se o
+  /// cliente ainda não estiver autenticado, pedimos o login antes do checkout.
+  Future<void> _irParaCheckout() async {
+    if (FirebaseAuth.instance.currentUser == null) {
+      await Navigator.pushNamed(context, '/login');
+    }
+    if (!mounted) return;
+    if (FirebaseAuth.instance.currentUser != null) {
+      Navigator.pushNamed(context, '/checkout');
+    }
+  }
+
+  /// Área de conta na AppBar: "Entrar" quando deslogado, saudação + sair
+  /// quando há um cliente autenticado.
+  Widget _contaAppBar() {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        final user = snapshot.data;
+        if (user == null) {
+          return TextButton.icon(
+            onPressed: () => Navigator.pushNamed(context, '/login'),
+            icon: const Icon(Icons.login, size: 18),
+            label: const Text('Entrar'),
+          );
+        }
+
+        final nomeCompleto = user.displayName?.trim();
+        final nome = (nomeCompleto != null && nomeCompleto.isNotEmpty)
+            ? nomeCompleto.split(' ').first
+            : (user.email ?? '').split('@').first;
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 90),
+              child: Text(
+                'Olá, $nome',
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14, color: Colors.black87, fontWeight: FontWeight.w500),
+              ),
+            ),
+            IconButton(icon: const Icon(Icons.logout), tooltip: 'Sair', onPressed: _sair),
+          ],
+        );
+      },
+    );
+  }
+
   void _mostrarResumoPedido(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -45,7 +114,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const Divider(height: 32),
-
                   if (carrinho.isEmpty)
                     const Center(child: Text('Carrinho vazio.'))
                   else
@@ -61,59 +129,44 @@ class _HomeScreenState extends State<HomeScreen> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(precoItem,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
+                            Text(precoItem, style: const TextStyle(fontWeight: FontWeight.bold)),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline,
-                                  color: Colors.red),
+                              icon: const Icon(Icons.delete_outline, color: Colors.red),
                               onPressed: () {
                                 carrinho.remover(index);
-                                if (carrinho.isEmpty) {
-                                  Navigator.pop(context);
-                                }
+                                if (carrinho.isEmpty) Navigator.pop(context);
                               },
                             ),
                           ],
                         ),
                       );
                     }),
-
                   const Divider(height: 32),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total:',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text('Total:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       Text(
                         carrinho.valorTotalFormatado,
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
-
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
                     onPressed: carrinho.isEmpty
                         ? null
                         : () {
                             Navigator.pop(context); // Fecha o resumo do pedido
-                            Navigator.pushNamed(context, '/checkout');
+                            _irParaCheckout();
                           },
-                    child: const Text('Avançar para Pagamento',
-                        style: TextStyle(fontSize: 16)),
+                    child: const Text('Avançar para Pagamento', style: TextStyle(fontSize: 16)),
                   ),
                 ],
               ),
@@ -132,23 +185,25 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         titleSpacing: 0,
+        // Toque longo na logo abre o acesso restrito da administração.
         title: Padding(
           padding: const EdgeInsets.only(left: 16.0),
-          child: Image.asset(
-            'assets/logo.png',
-            height: 40,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.favorite, color: Colors.green),
+          child: GestureDetector(
+            onLongPress: () => Navigator.pushNamed(context, '/admin/login'),
+            child: Image.asset(
+              'assets/logo.png',
+              height: 40,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.favorite, color: Colors.green),
+            ),
           ),
         ),
         actions: [
+          _contaAppBar(),
           IconButton(
             icon: const Icon(Icons.info_outline),
+            tooltip: 'Sobre',
             onPressed: () => Navigator.pushNamed(context, '/about'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.admin_panel_settings),
-            onPressed: () => Navigator.pushNamed(context, '/login'),
           ),
           const SizedBox(width: 8),
         ],
@@ -158,10 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(
-              'Nosso Cardápio',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+            child: Text('Nosso Cardápio', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           ),
           SizedBox(
             height: 50,
@@ -178,9 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: Text(cat['label']!),
                     selected: isSelected,
                     onSelected: (selected) {
-                      if (selected) {
-                        setState(() => _selectedCategory = cat['id']!);
-                      }
+                      if (selected) setState(() => _selectedCategory = cat['id']!);
                     },
                     selectedColor: Theme.of(context).primaryColor,
                     labelStyle: TextStyle(
@@ -191,9 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     backgroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                        color: isSelected ? Theme.of(context).primaryColor : Colors.grey[300]!,
-                      ),
+                      side: BorderSide(color: isSelected ? Theme.of(context).primaryColor : Colors.grey[300]!),
                     ),
                   ),
                 );
@@ -230,9 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   elevation: 8,
                 ),
                 child: Row(
@@ -246,14 +292,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           top: 0,
                           child: Container(
                             padding: const EdgeInsets.all(2),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 16,
-                              minHeight: 16,
-                            ),
+                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                             child: Text(
                               '${carrinho.quantidadeTotal}',
                               style: TextStyle(
@@ -272,10 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Ver Pedido',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                        ),
+                        const Text('Ver Pedido', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                         Text(
                           carrinho.valorTotalFormatado,
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

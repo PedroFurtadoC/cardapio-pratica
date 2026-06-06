@@ -1,0 +1,37 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "cardapio-coracao-de-mae",
+          "appId": "1:840471989431:android:e873e930ad3ce74de05132",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "cardapio-coracao-de-mae",
+          "configurations": {
+            "android": "1:840471989431:android:e873e930ad3ce74de05132",
+            "ios": "1:840471989431:ios:b0fdc35d464d26dde05132",
+            "web": "1:840471989431:web:20454cae259daa94e05132"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
-import '../services/api_client.dart';
+import '../services/firebase_auth_service.dart';
 import '../widgets/custom_input.dart';
 import '../widgets/custom_button.dart';
 
@@ -14,7 +13,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final AuthService _authService = AuthService();
+  final FirebaseAuthService _authService = FirebaseAuthService();
   bool _isLoading = false;
 
   @override
@@ -35,16 +34,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Se o email existir, as instruções foram enviadas.'),
+          content: Text('Enviamos as instruções de recuperação para o seu e-mail.'),
           backgroundColor: Colors.green,
         ),
       );
       Navigator.pop(context);
 
-    } on ApiError catch (e) {
+    } on AuthFalha catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
+        SnackBar(content: Text(e.mensagem), backgroundColor: Colors.redAccent),
       );
     } catch (_) {
       if (!mounted) return;

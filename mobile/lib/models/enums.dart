@@ -1,13 +1,4 @@
-// Enumerações para modalidades e formas de pagamento
-
-enum Role {
-  admin('ADMIN'),
-  cliente('CLIENTE');
-
-  final String value;
-  const Role(this.value);
-  factory Role.fromValue(String v) => values.firstWhere((e) => e.value == v);
-}
+// Enumerações para categorias, modalidades e formas de pagamento
 
 enum CategoriaProduto {
   marmitas('MARMITAS'),

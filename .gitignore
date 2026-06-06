@@ -39,3 +39,10 @@ cardapio-pratica.code-workspace
 **/dist/
 **/build/
 **/.env*
+
+# Ferramentas e documentos internos da equipe (não versionar)
+.mcp.json
+GUIA_EQUIPE.*
+
+# Firebase (cache local de deploy do Hosting)
+**/.firebase/

@@ -4,19 +4,14 @@ Este diretório concentra exclusivamente a construção do aplicativo mobile do 
 
 ## Primeiros Passos
 
-1. **Iniciando o projeto Flutter**
-Caso a estruturação do Flutter ainda não tenha sido gerada, executem o comando abaixo na raiz desta pasta (`mobile`):
+O projeto já está estruturado e com o Firebase configurado. Depois de clonar o repositório, dentro da pasta `mobile`:
 
 ```bash
-flutter create .
-```
-
-Isso vai configurar os arquivos base do Android, iOS e web nativas do framework, preservando a nossa arquitetura base na pasta `lib`.
-
-2. **Rodando a Aplicação**
-```bash
+flutter pub get
 flutter run
 ```
+
+Não é preciso rodar `flutter create` nem configurar o Firebase manualmente: os arquivos de configuração já vêm versionados (veja a seção "Autenticação com Firebase").
 
 ## Estrutura Interna Recomendada (lib)
 
@@ -38,3 +33,24 @@ O backend roda na porta `8000`. Porém, se usarmos o emulador do Android, acessa
 - Caso usem o celular físico espetado via USB/Wi-Fi, as requisições devem ir para o endereço de rede da máquina local, como por exemplo: `http://192.168.0.X:8000`
 
 Para ter certeza do que estão tentando enviar ou o formato da resposta, sempre confiram o painel de documentação da API em `http://localhost:8000/docs`. Pode bater e testar por lá. Bom trabalho!
+
+## Autenticação com Firebase
+
+O acesso dos clientes (login, cadastro e recuperação de senha) é feito pelo **Firebase Authentication** (provedor e-mail/senha). No cadastro, além de criar a conta, guardamos nome e telefone na coleção `usuarios` do **Cloud Firestore**. O restante do app (cardápio e pedidos) continua consumindo a nossa API REST.
+
+A configuração do Firebase já vem versionada no projeto (`lib/firebase_options.dart` e `android/app/google-services.json`), gerada com a CLI do FlutterFire. Então, após o `flutter pub get`, o app já sobe conectado ao Firebase, sem nenhum passo extra.
+
+O fluxo segue o uso real da marmitaria: o **cardápio é aberto**, ou seja, o app abre direto nele, o que funciona bem tanto para um tablet no balcão quanto para quem só quer dar uma olhada. O login com Firebase é pedido **na hora de finalizar o pedido**, para identificar o cliente. A **administração** (gestão de pedidos e produtos) fica numa **área restrita com login próprio** (autenticação via API, igual ao painel web), acessível por um toque longo na logo.
+
+## Aplicativo publicado
+
+O app está publicado como WebApp no **Firebase Hosting**:
+
+🔗 https://cardapio-coracao-de-mae.web.app
+
+Para gerar uma nova versão e publicar:
+
+```bash
+flutter build web --release
+firebase deploy --only hosting
+```

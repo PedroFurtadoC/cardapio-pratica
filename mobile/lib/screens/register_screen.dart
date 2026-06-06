@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/usuario_service.dart';
-import '../services/api_client.dart';
+import '../services/firebase_auth_service.dart';
 import '../widgets/custom_input.dart';
 import '../widgets/custom_button.dart';
 
@@ -19,7 +18,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   
-  final UsuarioService _usuarioService = UsuarioService();
+  final FirebaseAuthService _authService = FirebaseAuthService();
   bool _isLoading = false;
 
   @override
@@ -45,30 +44,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _usuarioService.criarUsuario({
-        'nome': _nomeController.text.trim(),
-        'email': _emailController.text.trim(),
-        'telefone': _telefoneController.text.trim(),
-        'senha': _passwordController.text,
-        'role': 'CLIENTE',
-      });
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cadastro realizado com sucesso! Faça login.'), backgroundColor: Colors.green),
+      await _authService.cadastrar(
+        nome: _nomeController.text.trim(),
+        email: _emailController.text.trim(),
+        telefone: _telefoneController.text.trim(),
+        senha: _passwordController.text,
       );
-      Navigator.pop(context);
 
-    } on ApiError catch (e) {
+      if (!mounted) return;
+
+      // O Firebase já deixa o novo usuário autenticado; voltamos ao fluxo
+      // de origem (cardápio ou checkout) já logado.
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Conta criada com sucesso! Bom apetite.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Navigator.popUntil(context, (route) {
+        final nome = route.settings.name;
+        return nome != '/login' && nome != '/register';
+      });
+    } on AuthFalha catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
+        SnackBar(content: Text(e.mensagem), backgroundColor: Colors.redAccent),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro de conexão.'), backgroundColor: Colors.redAccent),
+        const SnackBar(content: Text('Não foi possível concluir o cadastro.'), backgroundColor: Colors.redAccent),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);

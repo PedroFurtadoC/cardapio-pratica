@@ -40,14 +40,6 @@ class _ProdutoCardState extends State<ProdutoCard> {
     setState(() {
       quantidade = 1;
     });
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${widget.produto.nome} adicionado ao pedido!'),
-        duration: const Duration(seconds: 1),
-        backgroundColor: Colors.green,
-      ),
-    );
   }
 
   @override
