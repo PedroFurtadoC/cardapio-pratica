@@ -26,6 +26,16 @@ class AboutScreen extends StatelessWidget {
             const SizedBox(height: 24),
             _buildSection(
               context,
+              'A Coração de Mãe',
+              'A Coração de Mãe é uma marmitaria de Ribeirão Preto especializada em comida caseira '
+              'sem glúten, sem leite e com opções veganas, tudo preparado de forma artesanal. '
+              'Esse cuidado nasceu de uma motivação pessoal do casal que comanda o negócio, que tem '
+              'um filho celíaco e conhece de perto a dificuldade de encontrar refeições seguras e saborosas '
+              'para quem vive com restrições alimentares.',
+            ),
+            const SizedBox(height: 24),
+            _buildSection(
+              context,
               'Equipe de Desenvolvimento',
               '• Pedro Furtado Cunha\n• André Fernando Machado\n• Felipe de Sousa Pegoraro',
             ),

@@ -228,8 +228,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 RadioGroup<ModalidadeEntrega>(
                   groupValue: _modalidade,
                   onChanged: (v) => setState(() => _modalidade = v!),
+                  // A marmitaria trabalha com retirada e entrega (sem consumo no local).
                   child: Column(
-                    children: ModalidadeEntrega.values
+                    children: [ModalidadeEntrega.retirada, ModalidadeEntrega.delivery]
                         .map(
                           (m) => RadioListTile<ModalidadeEntrega>(
                             value: m,
